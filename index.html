@@ -1183,7 +1183,7 @@ function speakCute(text, extraCute) {
 }
 document.addEventListener('click', () => { speechSynthesis.getVoices(); }, {once:true});
 
-function isVoiceOn() {
+function isVoiceOn() { return localStorage.getItem('xiaotong_voice') === 'on';
   return localStorage.getItem('xiaotong_voice') === 'on';
 }
 function toggleVoice() {
