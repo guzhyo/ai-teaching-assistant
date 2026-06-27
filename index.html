@@ -552,7 +552,7 @@ html, body {
       <h1>AI 助教 · 小统</h1>
       <p>扫描二维码进入智能体学习空间</p>
     </div>
-    <button id="voiceToggleTop" onclick="toggleVoice()" style="margin-left:auto;padding:6px 12px;border-radius:16px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:var(--text2);font-size:18px;cursor:pointer;flex-shrink:0;" title="语音播报(已关闭)">🔇</button>
+    <button id="voiceToggleTop" onclick="toggleVoice()" style="margin-left:auto;padding:4px 10px;border-radius:14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:var(--text2);font-size:16px;cursor:pointer;flex-shrink:0;line-height:1;" title="语音播报(已关闭)">🔇</button>
   </div>
 
   <!-- Hero -->
@@ -1409,8 +1409,7 @@ function toggleChat() {
           <h4>小统</h4>
           <span id="chatModelLabel">● 在线</span>
         </div>
-        <button class="chat-close" id="voiceToggleBtn" onclick="toggleVoice()" style="margin-left:auto;margin-right:4px;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.06);border:none;color:var(--text2);font-size:14px;cursor:pointer;" title="语音播报(已关闭)">🔇</button>
-        <button class="chat-close" onclick="showApiSettings()" style="margin-right:4px;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.06);border:none;color:var(--text2);font-size:14px;cursor:pointer;" title="大模型设置">⚙</button>
+        <button class="chat-close" onclick="showApiSettings()" style="margin-left:auto;margin-right:4px;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.06);border:none;color:var(--text2);font-size:14px;cursor:pointer;" title="大模型设置">⚙</button>
         <button class="chat-close" onclick="closeChat()">✕</button>
       </div>
       <div class="chat-messages" id="chatMessages">
