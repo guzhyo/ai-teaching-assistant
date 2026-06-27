@@ -861,9 +861,14 @@ function openPanel(type) {
   container.innerHTML = html;
   activePanel = type;
   
-  // Re-bind quiz listeners
+  // Re-bind quiz listeners + auto-scroll to quiz
   if (type === 'knowledge') {
-    setTimeout(bindQuizListeners, 100);
+    setTimeout(function() {
+      bindQuizListeners();
+      // Auto-scroll to quiz section
+      var quiz = document.querySelector('.quiz-card');
+      if (quiz) quiz.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 150);
   }
   
   // Prevent body scroll when panel open
@@ -1170,16 +1175,21 @@ function speakCute(text, extraCute) {
   var sentences = t.split(/[。！？；，、～~]/).filter(function(s) { return s.trim(); });
   if (!sentences.length) sentences = [t];
   
-  sentences.forEach(function(s, i) {
-    var msg = new SpeechSynthesisUtterance(s.trim());
+  // Chain sentences: speak one at a time with onend, with delay after cancel()
+  var idx = 0;
+  function speakNext() {
+    if (idx >= sentences.length) return;
+    var msg = new SpeechSynthesisUtterance(sentences[idx].trim());
     msg.lang = 'zh-CN';
     msg.rate = extraCute ? 0.85 : 0.95;
     msg.pitch = extraCute ? 1.6 : 1.35;
     msg.volume = 1;
     if (_bestVoice) msg.voice = _bestVoice;
+    msg.onend = function() { idx++; speakNext(); };
     _utterances.push(msg);
     speechSynthesis.speak(msg);
-  });
+  }
+  setTimeout(speakNext, 50); // Small delay after cancel() to avoid race condition
 }
 document.addEventListener('click', () => { speechSynthesis.getVoices(); }, {once:true});
 
