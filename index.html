@@ -1056,7 +1056,7 @@ function triggerWrongAnswerEffect(qi) {
     <div class="call-avatar"><img src="xiaotong.png" style="width:70px;height:70px;border-radius:50%;object-fit:cover;" alt="小统"></div>
     <div class="call-text">小统来电...</div>
     <div class="call-sub">同学，再想想哦～</div>
-    <button onclick="speakCute('${hint.replace(/'/g, "\\'")}',true,true);this.remove();" style="margin-top:16px;padding:10px 24px;border-radius:20px;background:linear-gradient(135deg,var(--primary),var(--accent2));border:none;color:#fff;font-size:14px;cursor:pointer;">🔊 听小统说</button>
+    <button onclick="speakCute('${hint.replace(/'/g, "\\'")}',true);this.remove();" style="margin-top:16px;padding:10px 24px;border-radius:20px;background:linear-gradient(135deg,var(--primary),var(--accent2));border:none;color:#fff;font-size:14px;cursor:pointer;">🔊 听小统说</button>
   `;
   document.body.appendChild(overlay);
 
@@ -1156,10 +1156,8 @@ loadBestVoice();
 
 var _utterances = [];
 
-function speakCute(text, extraCute, force) {
-  if (!text) return;
-  // Auto-speak only when voice is ON; forced calls (button click) always work
-  if (!force && !isVoiceOn()) return;
+function speakCute(text, extraCute) {
+  if (!isVoiceOn() || !text) return;
   
   if (_ttsAbort) { _ttsAbort.abort(); _ttsAbort = null; }
   speechSynthesis.cancel();
