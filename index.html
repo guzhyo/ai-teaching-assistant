@@ -1,0 +1,1631 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>AI 助教空间 · 小统</title>
+<script>
+// QRCode.js with fallback
+window._qrReady = false;
+</script>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" onload="window._qrReady=true"></script>
+<script>
+setTimeout(function(){
+  if(!window._qrReady && typeof QRCode === 'undefined'){
+    var s=document.createElement('script');
+    s.src='https://unpkg.com/qrcodejs@1.0.0/qrcode.min.js';
+    s.onload=function(){window._qrReady=true};
+    document.head.appendChild(s);
+  }
+},3000);
+</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script>
+// KaTeX with timeout fallback
+window._katexReady = false;
+</script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" onload="window._katexReady=true"></script>
+<script>
+setTimeout(function(){
+  if(!window._katexReady && typeof katex === 'undefined'){
+    // Try alternate CDN
+    var s=document.createElement('script');
+    s.src='https://unpkg.com/katex@0.16.9/dist/katex.min.js';
+    s.onload=function(){window._katexReady=true};
+    document.head.appendChild(s);
+  }
+},3000);
+</script>
+<style>
+:root {
+  --bg: #0a0a0f;
+  --surface: #12121a;
+  --surface2: #1a1a28;
+  --primary: #6c5ce7;
+  --primary-glow: #a29bfe;
+  --accent: #00d2ff;
+  --accent2: #ff6b9d;
+  --gold: #ffd700;
+  --text: #e8e8f0;
+  --text2: #9898b0;
+  --danger: #ff4757;
+  --success: #2ed573;
+  --radius: 16px;
+  --radius-sm: 10px;
+  --font: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { 
+  width: 100%; height: 100%; 
+  overflow: hidden;
+  background: var(--bg);
+  font-family: var(--font);
+  color: var(--text);
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* === Canvas Background === */
+#bg-canvas {
+  position: fixed; top: 0; left: 0;
+  width: 100%; height: 100%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* === Main Container === */
+#app {
+  position: relative; z-index: 1;
+  width: 100%; height: 100%;
+  display: flex; flex-direction: column;
+  overflow-y: auto; overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* === Top Bar === */
+.top-bar {
+  padding: 20px 20px 10px;
+  display: flex; align-items: center; gap: 12px;
+  flex-shrink: 0;
+}
+.avatar-ring {
+  width: 48px; height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px;
+  box-shadow: 0 0 20px rgba(108,92,231,0.4);
+  animation: avatarPulse 3s ease-in-out infinite;
+  flex-shrink: 0;
+}
+@keyframes avatarPulse {
+  0%, 100% { box-shadow: 0 0 20px rgba(108,92,231,0.4); }
+  50% { box-shadow: 0 0 40px rgba(0,210,255,0.6); }
+}
+.top-info h1 { font-size: 20px; font-weight: 700; }
+.top-info p { font-size: 12px; color: var(--text2); }
+
+/* === Hero Section === */
+.hero {
+  text-align: center; padding: 10px 20px 20px;
+  flex-shrink: 0;
+}
+.hero-badge {
+  display: inline-block;
+  padding: 6px 16px;
+  border-radius: 20px;
+  background: rgba(108,92,231,0.15);
+  border: 1px solid rgba(108,92,231,0.3);
+  font-size: 12px; color: var(--primary-glow);
+  margin-bottom: 12px;
+}
+.hero h2 {
+  font-size: 26px; font-weight: 800;
+  background: linear-gradient(135deg, #fff, var(--primary-glow));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 6px;
+}
+.hero .subtitle {
+  font-size: 13px; color: var(--text2);
+}
+
+/* === Main Menu - Three Cards === */
+.menu {
+  display: flex; flex-direction: column; gap: 14px;
+  padding: 0 20px 30px;
+  flex-shrink: 0;
+}
+.menu-card {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: var(--radius);
+  padding: 22px 20px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  display: flex; align-items: center; gap: 16px;
+}
+.menu-card:active {
+  transform: scale(0.97);
+}
+.menu-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  border-radius: 2px 2px 0 0;
+}
+.menu-card.card1::before { background: linear-gradient(90deg, var(--accent), var(--primary)); }
+.menu-card.card2::before { background: linear-gradient(90deg, var(--accent2), #ffa502); }
+.menu-card.card3::before { background: linear-gradient(90deg, var(--success), var(--accent)); }
+.menu-card .card-icon {
+  width: 52px; height: 52px; border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px; flex-shrink: 0;
+}
+.card1 .card-icon { background: rgba(0,210,255,0.1); }
+.card2 .card-icon { background: rgba(255,107,157,0.1); }
+.card3 .card-icon { background: rgba(46,213,115,0.1); }
+.menu-card .card-body h3 { 
+  font-size: 17px; font-weight: 700; margin-bottom: 4px;
+}
+.menu-card .card-body p {
+  font-size: 12px; color: var(--text2); line-height: 1.4;
+}
+
+/* === Panel (Modal) === */
+.panel-overlay {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.85);
+  z-index: 100;
+  display: flex; align-items: flex-end;
+  animation: fadeIn 0.3s ease;
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.panel {
+  width: 100%; max-height: 85vh;
+  background: var(--surface);
+  border-radius: 24px 24px 0 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+.panel-header {
+  position: sticky; top: 0; z-index: 10;
+  background: var(--surface);
+  padding: 20px 20px 10px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.panel-header h3 { font-size: 18px; font-weight: 700; }
+.panel-close {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: rgba(255,255,255,0.06); border: none; color: var(--text2);
+  font-size: 20px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.panel-body { padding: 20px; }
+
+/* === Case Cards === */
+.company-card {
+  background: var(--surface2);
+  border-radius: var(--radius-sm);
+  padding: 18px;
+  margin-bottom: 14px;
+  border-left: 3px solid var(--accent);
+}
+.company-card h4 { 
+  font-size: 16px; font-weight: 700; margin-bottom: 10px;
+  color: var(--accent);
+}
+.company-card .data-row {
+  display: flex; justify-content: space-between;
+  padding: 6px 0; font-size: 13px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.company-card .data-row:last-child { border: none; }
+.company-card .data-row .label { color: var(--text2); }
+.company-card .data-row .value { font-weight: 600; }
+
+/* === Knowledge Section === */
+.knowledge-block {
+  background: var(--surface2);
+  border-radius: var(--radius-sm);
+  padding: 18px;
+  margin-bottom: 14px;
+}
+.knowledge-block h4 {
+  font-size: 15px; font-weight: 700; margin-bottom: 8px;
+  color: var(--accent2);
+}
+.knowledge-block p {
+  font-size: 13px; line-height: 1.7; color: var(--text2);
+}
+
+/* === Quiz Section === */
+.quiz-card {
+  background: linear-gradient(135deg, var(--surface2), rgba(108,92,231,0.08));
+  border: 1px solid rgba(108,92,231,0.2);
+  border-radius: var(--radius);
+  padding: 22px;
+  margin: 20px 0;
+  position: relative;
+  overflow: hidden;
+}
+.quiz-card::after {
+  content: '🎯';
+  position: absolute; top: 12px; right: 16px;
+  font-size: 24px; opacity: 0.3;
+}
+.quiz-card .q-title {
+  font-size: 13px; color: var(--primary-glow); margin-bottom: 12px;
+  font-weight: 600;
+}
+.quiz-card .q-text {
+  font-size: 16px; font-weight: 600; margin-bottom: 16px; line-height: 1.5;
+}
+.quiz-options { display: flex; flex-direction: column; gap: 8px; }
+.quiz-option {
+  padding: 14px 16px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+  color: var(--text);
+}
+.quiz-option:active { background: rgba(108,92,231,0.15); }
+.quiz-option.correct {
+  background: rgba(46,213,115,0.15) !important;
+  border-color: var(--success) !important;
+  animation: correctFlash 0.6s ease;
+}
+.quiz-option.wrong {
+  background: rgba(255,71,87,0.15) !important;
+  border-color: var(--danger) !important;
+  animation: shake 0.5s ease;
+}
+@keyframes correctFlash {
+  0%, 100% { box-shadow: 0 0 0 rgba(46,213,115,0); }
+  50% { box-shadow: 0 0 30px rgba(46,213,115,0.5); }
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-8px); }
+  40% { transform: translateX(8px); }
+  60% { transform: translateX(-6px); }
+  80% { transform: translateX(6px); }
+}
+.quiz-feedback {
+  margin-top: 14px; padding: 14px; border-radius: var(--radius-sm);
+  font-size: 14px; text-align: center;
+  display: none;
+  animation: fadeIn 0.4s ease;
+}
+.quiz-feedback.show { display: block; }
+.quiz-feedback.correct-fb { background: rgba(46,213,115,0.1); color: var(--success); }
+.quiz-feedback.wrong-fb { background: rgba(255,71,87,0.1); color: var(--danger); }
+
+/* === Shake Screen Effect === */
+.screen-shake {
+  animation: screenShake 0.6s ease;
+}
+@keyframes screenShake {
+  0%, 100% { transform: translate(0, 0); }
+  10% { transform: translate(-4px, 2px); }
+  20% { transform: translate(4px, -2px); }
+  30% { transform: translate(-3px, -1px); }
+  40% { transform: translate(3px, 1px); }
+  50% { transform: translate(-2px, -1px); }
+  60% { transform: translate(2px, 1px); }
+  70% { transform: translate(-1px, 0); }
+  80% { transform: translate(1px, 0); }
+  90% { transform: translate(0, 0); }
+}
+
+/* === Task Section === */
+.task-item {
+  background: var(--surface2);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  margin-bottom: 12px;
+  display: flex; align-items: flex-start; gap: 12px;
+  border-left: 3px solid var(--success);
+}
+.task-num {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: rgba(46,213,115,0.15);
+  color: var(--success);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700;
+  flex-shrink: 0;
+}
+.task-item p { font-size: 13px; line-height: 1.6; }
+
+/* === Floating Assistant === */
+.float-assistant {
+  position: fixed; bottom: 20px; right: 20px;
+  width: 56px; height: 56px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  box-shadow: 0 4px 24px rgba(108,92,231,0.5);
+  z-index: 50; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px;
+  animation: floatBounce 2s ease-in-out infinite;
+  transition: transform 0.2s;
+}
+.float-assistant:active { transform: scale(0.9); }
+@keyframes floatBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+/* === Chat Float Button === */
+.float-chat {
+  position: fixed; bottom: 20px; left: 20px;
+  width: 56px; height: 56px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent2), #ffa502);
+  box-shadow: 0 4px 24px rgba(255,107,157,0.5);
+  z-index: 50; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px;
+  animation: floatBounce 2.5s ease-in-out infinite;
+  transition: transform 0.2s;
+}
+.float-chat:active { transform: scale(0.9); }
+
+/* === Voice Float Button (Home) === */
+.float-voice {
+  position: fixed; top: 20px; right: 20px;
+  width: 44px; height: 44px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--success), var(--accent));
+  box-shadow: 0 4px 20px rgba(46,213,115,0.4);
+  z-index: 50; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px;
+  transition: transform 0.2s;
+  border: none;
+}
+.float-voice:active { transform: scale(0.9); }
+.float-voice.on {
+  background: linear-gradient(135deg, var(--accent), var(--success));
+  box-shadow: 0 4px 20px rgba(0,210,255,0.5);
+}
+
+/* === Chat Panel === */
+.chat-panel {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  height: 65vh; max-height: 500px;
+  background: var(--surface);
+  border-radius: 24px 24px 0 0;
+  z-index: 150;
+  display: flex; flex-direction: column;
+  animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 -8px 40px rgba(0,0,0,0.5);
+}
+.chat-header {
+  padding: 14px 20px;
+  display: flex; align-items: center; gap: 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  flex-shrink: 0;
+}
+.chat-avatar {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), var(--accent2));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px;
+}
+.chat-header-info h4 { font-size: 15px; font-weight: 700; }
+.chat-header-info span { font-size: 11px; color: var(--success); }
+.chat-close {
+  margin-left: auto; width: 30px; height: 30px; border-radius: 50%;
+  background: rgba(255,255,255,0.06); border: none; color: var(--text2);
+  font-size: 16px; cursor: pointer;
+}
+.chat-messages {
+  flex: 1; overflow-y: auto; padding: 16px;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.chat-msg {
+  max-width: 85%; padding: 12px 16px; border-radius: 18px;
+  font-size: 13px; line-height: 1.6; word-break: break-word;
+  animation: msgIn 0.3s ease;
+}
+@keyframes msgIn { from { opacity: 0; transform: translateY(8px); } }
+.chat-msg.bot {
+  align-self: flex-start;
+  background: var(--surface2);
+  border-bottom-left-radius: 6px;
+  color: var(--text);
+}
+.chat-msg.user {
+  align-self: flex-end;
+  background: linear-gradient(135deg, var(--primary), #8b7cf0);
+  border-bottom-right-radius: 6px;
+  color: #fff;
+}
+.chat-typing {
+  align-self: flex-start; padding: 10px 16px;
+  display: flex; gap: 4px;
+}
+.chat-typing span {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--text2);
+  animation: typingDot 1.4s ease-in-out infinite;
+}
+.chat-typing span:nth-child(2) { animation-delay: 0.2s; }
+.chat-typing span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes typingDot {
+  0%, 60%, 100% { opacity: 0.3; transform: translateY(0); }
+  30% { opacity: 1; transform: translateY(-4px); }
+}
+.chat-input-area {
+  padding: 12px 16px; display: flex; gap: 10px;
+  border-top: 1px solid rgba(255,255,255,0.06); flex-shrink: 0;
+}
+.chat-input-area input {
+  flex: 1; padding: 12px 16px; border-radius: 20px;
+  background: var(--surface2); border: 1px solid rgba(255,255,255,0.08);
+  color: var(--text); font-size: 14px; outline: none;
+  font-family: var(--font);
+}
+.chat-input-area input::placeholder { color: var(--text2); }
+.chat-send {
+  width: 42px; height: 42px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), var(--accent2));
+  border: none; color: #fff; font-size: 18px; cursor: pointer;
+  flex-shrink: 0; transition: transform 0.2s;
+}
+.chat-send:active { transform: scale(0.9); }
+/* === Markdown in chat === */
+.chat-msg.bot p { margin: 4px 0; }
+.chat-msg.bot ul, .chat-msg.bot ol { margin: 4px 0; padding-left: 18px; }
+.chat-msg.bot li { margin: 2px 0; }
+.chat-msg.bot code { background: rgba(255,255,255,0.08); padding: 1px 5px; border-radius: 4px; font-size: 12px; }
+.chat-msg.bot pre { background: rgba(0,0,0,0.3); padding: 8px 12px; border-radius: 8px; overflow-x: auto; margin: 6px 0; }
+.chat-msg.bot pre code { background: none; padding: 0; }
+.chat-msg.bot strong { color: var(--accent); }
+.chat-msg.bot em { color: var(--primary-glow); font-style: italic; }
+.chat-msg.bot blockquote { border-left: 2px solid var(--primary); padding-left: 10px; margin: 6px 0; color: var(--text2); }
+.chat-msg.bot .katex-display { margin: 8px 0; overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; }
+.chat-msg.bot .katex { font-size: 1.05em; max-width: 100%; }
+
+/* === Speak button on messages === */
+.msg-speak-btn {
+  display: inline-block; margin-left: 6px; padding: 2px 6px;
+  border-radius: 10px; background: rgba(255,255,255,0.08);
+  font-size: 11px; cursor: pointer; vertical-align: middle;
+  opacity: 0.5; transition: opacity 0.2s;
+  user-select: none; -webkit-
+.msg-speak-btn:hover, .msg-speak-btn:active { opacity: 1; background: rgba(108,92,231,0.2); }
+
+/* === Toast === */
+.toast {
+  position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+  background: var(--surface2); color: var(--text);
+  padding: 12px 24px; border-radius: 24px;
+  font-size: 14px; z-index: 200;
+  border: 1px solid rgba(255,255,255,0.1);
+  animation: toastIn 0.3s ease, toastOut 0.3s ease 2s forwards;
+  pointer-events: none;
+}
+@keyframes toastIn { from { opacity: 0; transform: translateX(-50%) translateY(-20px); } }
+@keyframes toastOut { to { opacity: 0; transform: translateX(-50%) translateY(-20px); } }
+
+/* === QR Modal === */
+.qr-modal {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.9);
+  z-index: 300;
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column;
+  gap: 20px;
+}
+.qr-modal .qr-box {
+  background: #fff; padding: 24px; border-radius: 20px;
+  box-shadow: 0 0 60px rgba(108,92,231,0.3);
+}
+.qr-modal p {
+  color: var(--text); font-size: 14px; text-align: center;
+}
+.qr-modal .qr-close {
+  padding: 10px 30px; border-radius: 20px;
+  background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+  color: var(--text); font-size: 14px; cursor: pointer;
+}
+
+/* === Call Animation === */
+.call-overlay {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.92);
+  z-index: 250;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 20px;
+}
+.call-avatar {
+  width: 80px; height: 80px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), var(--accent2));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 42px;
+  animation: callPulse 1s ease-in-out infinite;
+}
+@keyframes callPulse {
+  0%, 100% { box-shadow: 0 0 0 rgba(108,92,231,0); transform: scale(1); }
+  50% { box-shadow: 0 0 40px rgba(255,107,157,0.6); transform: scale(1.08); }
+}
+.call-text { font-size: 20px; font-weight: 700; }
+.call-sub { font-size: 13px; color: var(--text2); }
+
+/* === Responsive === */
+@media (min-width: 768px) {
+  #app { max-width: 500px; margin: 0 auto; }
+  .panel { max-width: 500px; margin: 0 auto; border-radius: 24px; }
+}
+</style>
+</head>
+<body>
+
+<canvas id="bg-canvas"></canvas>
+
+<div id="app" role="main" aria-label="AI助教小统学习空间">
+  <!-- Top Bar -->
+  <div class="top-bar">
+    <div class="avatar-ring"><img src="xiaotong.png" style="width:40px;height:40px;border-radius:50%;object-fit:cover;" alt="小统"></div>
+    <div class="top-info">
+      <h1>AI 助教 · 小统</h1>
+      <p>扫描二维码进入智能体学习空间</p>
+    </div>
+  </div>
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="hero-badge">📡 武汉科创孵化平台案例</div>
+    <h2 id="pageTitle">时点数列 · 互动学习</h2>
+    <p class="subtitle">《统计学原理》第五章第二节 | 辜子璇 会计学院</p>
+  </div>
+
+  <!-- Three Cards -->
+  <div class="menu">
+    <div class="menu-card card1" onclick="openPanel('case')" role="button" tabindex="0" aria-label="查看案例信息">
+      <div class="card-icon">📊</div>
+      <div class="card-body">
+        <h3>📋 案例信息</h3>
+        <p>查阅4家科创孵化平台的在孵企业数据与统计方法</p>
+      </div>
+    </div>
+    <div class="menu-card card2" onclick="openPanel('knowledge')" role="button" tabindex="0" aria-label="查看知识点模块">
+      <div class="card-icon">🧠</div>
+      <div class="card-body">
+        <h3>📖 知识点模块</h3>
+        <p>自学时点数列含义·分类·四种计算方法</p>
+      </div>
+    </div>
+    <div class="menu-card card3" onclick="openPanel('task')" role="button" tabindex="0" aria-label="查看课后任务">
+      <div class="card-icon">🎯</div>
+      <div class="card-body">
+        <h3>📝 课后任务</h3>
+        <p>基础习题 / 创意作业 / 思政讨论 / 深度思考</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Floating Buttons -->
+<button class="float-voice" id="voiceFloatBtn" onclick="toggleVoice()" title="语音播报(已关闭)" aria-label="切换语音播报">🔇</button>
+<div class="float-assistant" onclick="showQR()" title="分享二维码" role="button" tabindex="0" aria-label="显示二维码分享">🔗</div>
+<div class="float-chat" onclick="toggleChat()" title="和小统对话" role="button" tabindex="0" aria-label="打开聊天对话框">💬</div>
+
+<!-- Chat Panel -->
+<div id="chatContainer"></div>
+
+<!-- Panel Container -->
+<div id="panelContainer"></div>
+
+<!-- Toast Container -->
+<div id="toastContainer"></div>
+
+<script>
+// ==================== CONFIG ====================
+const CONFIG = {
+  starsCount: 120,
+  particlesCount: 30,
+  connectionDist: 120,
+  debounceDelay: 150
+};
+
+// ==================== STARFIELD BACKGROUND ====================
+const canvas = document.getElementById('bg-canvas');
+const ctx = canvas.getContext('2d');
+let stars = [];
+let particles = [];
+let animFrameId = null;
+let canvasPaused = false;
+
+function resize() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+let resizeTimer;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(resize, CONFIG.debounceDelay);
+});
+resize();
+
+// Pause canvas when page is hidden
+document.addEventListener('visibilitychange', () => {
+  canvasPaused = document.hidden;
+  if (!canvasPaused && !animFrameId) {
+    animFrameId = requestAnimationFrame(animate);
+  }
+});
+
+// Create stars
+for (let i = 0; i < CONFIG.starsCount; i++) {
+  stars.push({
+    x: Math.random() * canvas.width,
+    y: Math.random() * canvas.height,
+    r: Math.random() * 1.5 + 0.5,
+    twinkle: Math.random() * Math.PI * 2
+  });
+}
+
+// Create floating particles
+for (let i = 0; i < CONFIG.particlesCount; i++) {
+  particles.push({
+    x: Math.random() * canvas.width,
+    y: Math.random() * canvas.height,
+    r: Math.random() * 2 + 0.5,
+    vx: (Math.random() - 0.5) * 0.4,
+    vy: (Math.random() - 0.5) * 0.4 - 0.2,
+    opacity: Math.random() * 0.5 + 0.1
+  });
+}
+
+function animate() {
+  if (canvasPaused) { animFrameId = null; return; }
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  
+  // Draw stars
+  for (const s of stars) {
+    s.twinkle += 0.02;
+    const alpha = 0.3 + Math.sin(s.twinkle) * 0.3;
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+    ctx.fill();
+  }
+
+  // Draw particles
+  for (const p of particles) {
+    p.x += p.vx;
+    p.y += p.vy;
+    if (p.x < 0) p.x = canvas.width;
+    if (p.x > canvas.width) p.x = 0;
+    if (p.y < 0) p.y = canvas.height;
+    if (p.y > canvas.height) p.y = 0;
+    
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(108,92,231,${p.opacity})`;
+    ctx.fill();
+  }
+
+  // Draw connection lines
+  for (let i = 0; i < particles.length; i++) {
+    for (let j = i + 1; j < particles.length; j++) {
+      const dx = particles[i].x - particles[j].x;
+      const dy = particles[i].y - particles[j].y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < CONFIG.connectionDist) {
+        ctx.beginPath();
+        ctx.moveTo(particles[i].x, particles[i].y);
+        ctx.lineTo(particles[j].x, particles[j].y);
+        ctx.strokeStyle = `rgba(108,92,231,${0.08 * (1 - dist/CONFIG.connectionDist)})`;
+        ctx.lineWidth = 0.5;
+        ctx.stroke();
+      }
+    }
+  }
+
+  animFrameId = requestAnimationFrame(animate);
+}
+animFrameId = requestAnimationFrame(animate);
+
+// ==================== CONTENT DATA ====================
+// ★★★ 主人在这里替换真实数据 ★★★
+
+const companyData = [
+  {
+    name: '【案例一】创客星-武汉',
+    rows: [
+      ['企业背景', '央企背景，隶属中电光谷集团'],
+      ['成立时间', '2015年'],
+      ['业务规模', '22个城市36个站点'],
+      ['平台资质', '国家双创示范基地'],
+      ['数据类型', '连续时点数列（每日登记）'],
+      ['计算方法', '简单算术平均法'],
+      ['第四季度均值', '100 家'],
+    ]
+  },
+  {
+    name: '【案例二】光谷创业咖啡（武汉）',
+    rows: [
+      ['企业背景', '头部民营，雷军和李儒雄共同投资'],
+      ['成立时间', '2013年（武汉）；2017年成都；2019年杭州'],
+      ['平台资质', '国家备案众创空间'],
+      ['数据类型', '连续时点数列（隔日登记）'],
+      ['计算方法', '加权算术平均法'],
+      ['登记次数', '6次（间隔20/25/11/19/16天）'],
+      ['第四季度均值', '103 家'],
+    ]
+  },
+  {
+    name: '【案例三】华科育新',
+    rows: [
+      ['企业背景', '依托华中科技大学，校企改革成果'],
+      ['成立时间', '2017年'],
+      ['业务模式', '三位一体科技服务'],
+      ['平台资质', '国家备案众创空间'],
+      ['数据类型', '间断时点数列（不等距）'],
+      ['计算方法', '两两平均加权法'],
+      ['登记特点', '3次登记，间隔1个月和2个月'],
+      ['第四季度均值', '61 家'],
+    ]
+  },
+  {
+    name: '【案例四】武汉留学生创业园',
+    rows: [
+      ['企业背景', '老牌国营，1998年政府设立'],
+      ['业务定位', '吸纳海外优秀人才'],
+      ['发展展望', '打造区域性示范创新创业生态'],
+      ['数据类型', '间断时点数列（等距）'],
+      ['计算方法', '首尾折半法'],
+      ['登记特点', '4次登记，间隔均为1个月'],
+      ['第四季度均值', '145 家 ★最高'],
+    ]
+  }
+];
+
+const knowledgePoints = [
+  {
+    title: '一、时点数列的含义',
+    content: '时点数列是现象在某一特定时刻的规模水平，数据对应特定时点而非一段时期。就像拍一张照片，记录的是那个瞬间。例如：月末银行存款余额、季末库存量。与之相对的是时期数列（如本月销量），反映一段时期内的累计总量。'
+  },
+  {
+    title: '二、时点数列的分类（重点）',
+    content: '按观测登记方式分为两大类四种：\n\n【连续时点数列】\n①每日登记：每天都有记录，数据充足 → 简单算术平均法\n②隔日登记：变时才登记，间隔以天为单位且<1个月 → 加权算术平均法\n\n【间断时点数列】\n③不等距间断：间隔以月为单位，月数不等 → 两两平均加权法\n④等距间断：间隔以月为单位，月数相等 → 首尾折半法\n\n关键判断：间隔<1个月视同连续，≥1个月为间断。'
+  },
+  {
+    title: '三、连续时点数列的计算',
+    content: '【每日登记—简单算术平均法】\n直接求和÷个数：ā = Σa / n\n适用：创客星（央企），每天都有在孵企业记录。\n\n【隔日登记—加权算术平均法】\n各时点值×间隔长度÷总间隔：ā = Σ(a·f) / Σf\n关键假设：没登记的时候数据不变（短期合理）\n适用：光谷创业咖啡（民营），变时才登记，共6次。'
+  },
+  {
+    title: '四、间断时点数列的计算',
+    content: '为什么不用加权平均？间隔超月，数据过少，不能默认"没登记数据不变"（实事求是原则！）\n\n【不等距—两两平均加权法】\n①相邻两时点求平均 ②×各自间隔长度 ③求和÷总间隔\n适用：华科育新（高校），3次登记，间隔1个月和2个月不等。\n\n【等距—首尾折半法】\n是两两平均加权法的特例（间隔相等可化简）：\n$$\\bar{a} = \\frac{ \\frac{a_1}{2} + \\sum_{i=2}^{n-1} a_i + \\frac{a_n}{2} }{n-1}$$\n适用：留学生创业园（海归），4次登记，间隔均1个月。'
+  }
+];
+
+const quizQuestions = [
+  {
+    q: '创客星（央企）的在孵企业数据，属于哪种类型？应用什么方法计算？',
+    options: ['A. 连续时点（每日登记）→ 简单算术平均法', 'B. 间断时点（等距）→ 首尾折半法', 'C. 连续时点（隔日登记）→ 加权算术平均法', 'D. 间断时点（不等距）→ 两两平均加权法'],
+    answer: 0,
+    explain: '正确！创客星每日都有在孵企业数量记录，数据充足，属于连续时点数列的每日登记类型，采用简单算术平均法，均值100家。'
+  },
+  {
+    q: '华科育新3次登记的间隔为1个月和2个月，属于什么类型？',
+    options: ['A. 连续时点（每日登记）', 'B. 连续时点（隔日登记）', 'C. 间断时点（不等距）→ 两两平均加权法', 'D. 间断时点（等距）→ 首尾折半法'],
+    answer: 2,
+    explain: '正确！间隔以月为单位且月数不等，属于不等距间断时点数列，采用两两平均加权法。不能默认"没登记数据不变"。'
+  },
+  {
+    q: '经过计算，哪家科创孵化平台的第四季度平均在孵企业数量最高？政府应该投资谁？',
+    options: ['A. 创客星（100家）', 'B. 光谷创业咖啡（103家）', 'C. 华科育新（61家）', 'D. 武汉留学生创业园（145家）'],
+    answer: 3,
+    explain: '正确！武汉留学生创业园以145家拔得头筹！它属于等距间断时点数列，采用首尾折半法。央企、民企、高校、海归多元主体共构创新矩阵！'
+  }
+];
+
+const taskItems = [
+  '【基础习题】完成时点数列客观题（微助教平台）。巩固四种计算公式的适用条件和运算方法。',
+  '【创意作业】运用AI助教小统，制作一个时点数列运算短视频。要求：①任选一个案例公司 ②展示完整计算过程 ③时长2-3分钟。',
+  '【思政讨论】"事物是发展变化的"在时间数列中如何体现？请结合中国GDP时间数列谈认识。字数不少于500字。',
+  '【深度思考】要投资一家科创孵化器平台，只算均值够吗？不同方法算出的均值数据，可信度一样吗？请写一段200字的分析。',
+  '【拓展阅读】访问国家统计局官网 https://www.stats.gov.cn/，了解我国时间数列数据的发布与应用。',
+  '【下期预告】解锁「相对指标」时间数列，探索数据之间的深度纠缠！'
+];
+
+// ==================== PANEL LOGIC ====================
+let activePanel = null;
+
+function openPanel(type) {
+  const container = document.getElementById('panelContainer');
+  let html = '';
+  
+  if (type === 'case') {
+    html = buildCasePanel();
+  } else if (type === 'knowledge') {
+    html = buildKnowledgePanel();
+  } else if (type === 'task') {
+    html = buildTaskPanel();
+  }
+  
+  container.innerHTML = html;
+  activePanel = type;
+  
+  // Re-bind quiz listeners
+  if (type === 'knowledge') {
+    setTimeout(bindQuizListeners, 100);
+  }
+  
+  // Prevent body scroll when panel open
+  document.getElementById('app').style.overflow = 'hidden';
+}
+
+function closePanel() {
+  document.getElementById('panelContainer').innerHTML = '';
+  activePanel = null;
+  document.getElementById('app').style.overflow = '';
+}
+
+function buildCasePanel() {
+  let cards = companyData.map((c, i) => {
+    let rows = c.rows.map(r => 
+      `<div class="data-row"><span class="label">${r[0]}</span><span class="value">${r[1]}</span></div>`
+    ).join('');
+    return `<div class="company-card"><h4>${c.name}</h4>${rows}</div>`;
+  }).join('');
+  
+  return `
+    <div class="panel-overlay" onclick="closePanel()">
+      <div class="panel" onclick="event.stopPropagation()">
+        <div class="panel-header">
+          <h3>📋 案例信息</h3>
+          <button class="panel-close" onclick="closePanel()">✕</button>
+        </div>
+        <div class="panel-body">
+          <p style="font-size:13px;color:var(--text2);margin-bottom:16px;">
+            以下为课上展示的4家武汉科创孵化平台数据，请判断每家的数据类型和计算方法。
+          </p>
+          ${cards}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function buildKnowledgePanel() {
+  let blocks = knowledgePoints.map(kp => 
+    `<div class="knowledge-block"><h4>${kp.title}</h4><p>${kp.content}</p></div>`
+  ).join('');
+  
+  let quizHtml = quizQuestions.map((q, qi) => {
+    let opts = q.options.map((o, oi) => 
+      `<button class="quiz-option" data-q="${qi}" data-o="${oi}">${o}</button>`
+    ).join('');
+    return `
+      <div class="quiz-card">
+        <div class="q-title">随堂测验 ${qi + 1}/${quizQuestions.length}</div>
+        <div class="q-text">${q.q}</div>
+        <div class="quiz-options" id="quiz-options-${qi}">${opts}</div>
+        <div class="quiz-feedback" id="quiz-feedback-${qi}"></div>
+      </div>
+    `;
+  }).join('');
+  
+  return `
+    <div class="panel-overlay" onclick="closePanel()">
+      <div class="panel" onclick="event.stopPropagation()">
+        <div class="panel-header">
+          <h3>📖 知识点模块</h3>
+          <button class="panel-close" onclick="closePanel()">✕</button>
+        </div>
+        <div class="panel-body">
+          <p style="font-size:13px;color:var(--text2);margin-bottom:16px;">
+            自学时点数列的含义、分类与四种计算方法，完成后挑战随堂测验。答错会收到小统的电话问候哦~
+          </p>
+          ${blocks}
+          <div style="margin-top:10px; text-align:center; font-size:14px; color:var(--accent2); font-weight:600;">
+            ⬇️ 挑战测验 ⬇️
+          </div>
+          ${quizHtml}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function buildTaskPanel() {
+  let tasks = taskItems.map((t, i) => 
+    `<div class="task-item"><div class="task-num">${i+1}</div><p>${t}</p></div>`
+  ).join('');
+  
+  return `
+    <div class="panel-overlay" onclick="closePanel()">
+      <div class="panel" onclick="event.stopPropagation()">
+        <div class="panel-header">
+          <h3>📝 课后任务</h3>
+          <button class="panel-close" onclick="closePanel()">✕</button>
+        </div>
+        <div class="panel-body">
+          <p style="font-size:13px;color:var(--text2);margin-bottom:16px;">
+            请在下节课前完成以下任务，部分任务将在课堂上进行展示和讨论。
+          </p>
+          ${tasks}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// ==================== QUIZ LOGIC ====================
+let quizAnswered = {};
+
+function bindQuizListeners() {
+  document.querySelectorAll('.quiz-option').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const qi = parseInt(this.dataset.q);
+      const oi = parseInt(this.dataset.o);
+      
+      if (quizAnswered[qi]) return; // Already answered
+      quizAnswered[qi] = true;
+      
+      const q = quizQuestions[qi];
+      const isCorrect = oi === q.answer;
+      
+      // Highlight selected
+      this.classList.add(isCorrect ? 'correct' : 'wrong');
+      
+      // Highlight correct answer if wrong
+      if (!isCorrect) {
+        const correctBtn = document.querySelector(`#quiz-options-${qi} .quiz-option:nth-child(${q.answer + 1})`);
+        if (correctBtn) correctBtn.classList.add('correct');
+      }
+      
+      // Show feedback
+      const fb = document.getElementById(`quiz-feedback-${qi}`);
+      fb.className = `quiz-feedback show ${isCorrect ? 'correct-fb' : 'wrong-fb'}`;
+      fb.innerHTML = isCorrect
+        ? '✅ 回答正确！太棒了！'
+        : `❌ 回答错误！${q.explain}<br><button class="retry-btn" style="margin-top:10px;padding:8px 20px;border-radius:16px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:var(--text);font-size:13px;cursor:pointer;" onclick="event.stopPropagation();resetQuiz(${qi})">🔄 重新选择</button>`;
+
+      // Disable all options
+      document.querySelectorAll(`#quiz-options-${qi} .quiz-option`).forEach(b => {
+        b.style.pointerEvents = 'none';
+      });
+
+      // Wrong answer: trigger call animation
+      if (!isCorrect) {
+        triggerWrongAnswerEffect(qi);
+      }
+    });
+  });
+}
+
+function resetQuiz(qi) {
+  // Stop any ongoing speech immediately
+  if ('speechSynthesis' in window) speechSynthesis.cancel();
+
+  // Reset answered flag
+  delete quizAnswered[qi];
+
+  // Reset option styles and re-enable
+  const options = document.querySelectorAll(`#quiz-options-${qi} .quiz-option`);
+  options.forEach(b => {
+    b.classList.remove('correct', 'wrong');
+    b.style.pointerEvents = '';
+  });
+
+  // Hide feedback
+  const fb = document.getElementById(`quiz-feedback-${qi}`);
+  fb.className = 'quiz-feedback';
+  fb.innerHTML = '';
+}
+
+// ==================== WRONG ANSWER EFFECT ====================
+const wrongAnswerHints = [
+  '同学～回答错误～回顾一下连续时点数列的特点，再试试吧！',
+  '同学～回答错误～注意间隔是以月为单位还是以天为单位，再试试吧！',
+  '同学～回答错误～回顾一下四家公司的均值数据，再试试吧！'
+];
+
+function triggerWrongAnswerEffect(qi) {
+  // Screen shake
+  document.body.classList.add('screen-shake');
+  setTimeout(() => document.body.classList.remove('screen-shake'), 600);
+
+  // Vibration
+  if (navigator.vibrate) {
+    navigator.vibrate([100, 50, 100, 50, 200]);
+  }
+
+  const hint = wrongAnswerHints[qi] || wrongAnswerHints[0];
+
+  // Show call overlay
+  const overlay = document.createElement('div');
+  overlay.className = 'call-overlay';
+  overlay.innerHTML = `
+    <div class="call-avatar"><img src="xiaotong.png" style="width:70px;height:70px;border-radius:50%;object-fit:cover;" alt="小统"></div>
+    <div class="call-text">小统来电...</div>
+    <div class="call-sub">同学，再想想哦～</div>
+    <button onclick="speakCute('${hint.replace(/'/g, "\\'")}',true);this.remove();" style="margin-top:16px;padding:10px 24px;border-radius:20px;background:linear-gradient(135deg,var(--primary),var(--accent2));border:none;color:#fff;font-size:14px;cursor:pointer;">🔊 听小统说</button>
+  `;
+  document.body.appendChild(overlay);
+
+  // Text-to-speech (cute voice)
+  if (isVoiceOn()) speakCute(hint, true);
+  
+  // Auto dismiss after 4s
+  overlay.addEventListener('click', () => {
+    overlay.style.opacity = '0';
+    overlay.style.transition = 'opacity 0.3s';
+    setTimeout(() => overlay.remove(), 300);
+  });
+  setTimeout(() => {
+    if (overlay.parentNode) {
+      overlay.style.opacity = '0';
+      overlay.style.transition = 'opacity 0.5s';
+      setTimeout(() => { if (overlay.parentNode) overlay.remove(); }, 500);
+    }
+  }, 4000);
+  
+  // Show toast
+  showToast('🔔 小统给你打了一个电话～');
+}
+
+function showToast(msg) {
+  const container = document.getElementById('toastContainer');
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.textContent = msg;
+  container.appendChild(toast);
+  setTimeout(() => toast.remove(), 2500);
+}
+
+// ==================== QR CODE ====================
+function showQR() {
+  const url = window.location.href;
+  const modal = document.createElement('div');
+  modal.className = 'qr-modal';
+  modal.innerHTML = `
+    <div class="qr-box"><div id="qrcode"></div></div>
+    <p>扫描二维码进入智能体空间</p>
+    <p style="font-size:12px;color:var(--text2);word-break:break-all;max-width:280px;">${url}</p>
+    <button class="qr-close" onclick="this.parentElement.remove()">关闭</button>
+  `;
+  document.body.appendChild(modal);
+
+  try {
+    if (typeof QRCode !== 'undefined') {
+      new QRCode(document.getElementById('qrcode'), {
+        text: url,
+        width: 200,
+        height: 200,
+        colorDark: '#0a0a0f',
+        colorLight: '#ffffff',
+      });
+    } else {
+      document.getElementById('qrcode').innerHTML = '<p style="padding:60px 40px;text-align:center;color:var(--text2);font-size:13px;">二维码库加载中，请刷新页面重试<br>或直接访问上方链接</p>';
+    }
+  } catch(e) {
+    document.getElementById('qrcode').innerHTML = '<p style="padding:20px;text-align:center;color:var(--text2);font-size:12px;">' + url + '</p>';
+  }
+}
+
+// ==================== KEYBOARD NAVIGATION ====================
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    if (chatOpen) closeChat();
+    else if (activePanel) closePanel();
+  }
+  if (e.key === '1') openPanel('case');
+  if (e.key === '2') openPanel('knowledge');
+  if (e.key === '3') openPanel('task');
+});
+
+// ==================== CHAT SYSTEM ====================
+let chatOpen = false;
+
+// ==================== VOICE TOGGLE ====================
+// ==================== TTS ====================
+let _ttsAbort = null;
+let _bestVoice = null;
+
+function loadBestVoice() {
+  if (!('speechSynthesis' in window)) return;
+  let voices = speechSynthesis.getVoices();
+  // Best Chinese female voices
+  const preferred = ['Xiaoxiao', 'Yaoyao', 'Tingting', 'Kangkang', 'Google 普通话', 'Microsoft Hanhan', 'zh-CN'];
+  for (const p of preferred) {
+    for (const v of voices) {
+      if (v.lang.startsWith('zh') && v.name.includes(p)) { _bestVoice = v; return; }
+    }
+  }
+  for (const v of voices) { if (v.lang.startsWith('zh')) { _bestVoice = v; return; } }
+}
+speechSynthesis.onvoiceschanged = loadBestVoice;
+loadBestVoice();
+
+function speakCute(text, extraCute) {
+  if (!isVoiceOn() || !text) return;
+  
+  if (_ttsAbort) { _ttsAbort.abort(); _ttsAbort = null; }
+  speechSynthesis.cancel();
+  
+  let t = text.replace(/[*#_\[\]`~>\\n\\\\•🏢🏆💡📝📌📋⚙●🔇🔊🔗💬📊🧠🎯🪣]+/g, '').replace(/！/g,'～').trim();
+  if (!t || t.length < 2) return;
+  
+  // Split into sentences for natural pauses
+  const sentences = t.split(/[。！？；，、～~]/).filter(function(s) { return s.trim(); });
+  if (!sentences.length) sentences = [t];
+  
+  sentences.forEach(function(s, i) {
+    const msg = new SpeechSynthesisUtterance(s.trim());
+    msg.lang = 'zh-CN';
+    msg.rate = extraCute ? 0.85 : 0.95;
+    msg.pitch = extraCute ? 1.6 : 1.35;
+    msg.volume = 1;
+    if (_bestVoice) msg.voice = _bestVoice;
+    speechSynthesis.speak(msg);
+  });
+}
+document.addEventListener('click', () => { speechSynthesis.getVoices(); }, {once:true});
+
+function isVoiceOn() {
+  return localStorage.getItem('xiaotong_voice') === 'on';
+}
+function toggleVoice() {
+  const current = isVoiceOn();
+  if (current) {
+    // 关闭语音：立即停止所有播放
+    window._audioStopped = true;
+    if (window._currentAudio) { window._currentAudio.pause(); window._currentAudio = null; }
+    if ('speechSynthesis' in window) speechSynthesis.cancel();
+  }
+  localStorage.setItem('xiaotong_voice', current ? 'off' : 'on');
+  updateVoiceButton();
+}
+function updateVoiceButton() {
+  const on = isVoiceOn();
+  const icon = on ? '\u{1F50A}' : '\u{1F507}';
+  const title = on ? '语音播报(已开启)' : '语音播报(已关闭)';
+  const color = on ? 'var(--accent)' : 'var(--text2)';
+
+  // Chat panel button
+  const chatBtn = document.getElementById('voiceToggleBtn');
+  if (chatBtn) {
+    chatBtn.textContent = icon;
+    chatBtn.title = title;
+    chatBtn.style.color = color;
+  }
+
+  // Home page floating button
+  const floatBtn = document.getElementById('voiceFloatBtn');
+  if (floatBtn) {
+    floatBtn.textContent = icon;
+    floatBtn.title = title;
+    if (on) { floatBtn.classList.add('on'); }
+    else { floatBtn.classList.remove('on'); }
+  }
+}
+let chatMessages = [];
+let CHAT_HISTORY = [];
+
+const FAQ = [
+  { 
+    keys: ['你好','hi','hello','在吗','你是谁','小统','助教'],
+    reply: '你好！我是AI助教小统🪣，专门辅助《统计学原理》时点数列章节的学习。你可以问我：\n• 什么是时点数列？\n• 四种分类和计算方法\n• 四家公司的数据\n• 怎么区分连续和间断'
+  },
+  {
+    keys: ['时点数列','什么是时点','定义','含义'],
+    reply: '时点数列是现象在某一特定时刻的规模水平。就像拍一张照片，记录的是那个瞬间的数据。比如月末银行存款余额、季末库存量。\n\n它和"时期数列"不同——时期数列是一段时间的累计（如本月销量），时点数列是一个时点的快照。'
+  },
+  {
+    keys: ['分类','类型','怎么分','有哪些','几种'],
+    reply: '时点数列按观测登记方式分两大类四种：\n\n📌 **连续时点**（间隔<1个月）：\n- 每日登记 → 简单算术平均法\n- 隔日登记 → 加权算术平均法\n\n📌 **间断时点**（间隔≥1个月）：\n- 不等距间断 → 两两平均加权法\n- 等距间断 → 首尾折半法\n\n关键判断：间隔<1月=连续，≥1月=间断'
+  },
+  {
+    keys: ['简单算术平均','每日','每天'],
+    reply: '**简单算术平均法**：$$\\bar{a} = \\frac{\\sum a}{n}$$\n\n适用：每天都有数据记录（如创客星）。直接求和除以天数。'
+  },
+  {
+    keys: ['加权算术平均','隔日','加权'],
+    reply: '**加权算术平均法**：$$\\bar{a} = \\frac{\\sum (a \\cdot f)}{\\sum f}$$\n\n- $a$：各时点数值\n- $f$：间隔长度（权重）\n\n适用：变时才登记，间隔<1个月（如光谷创业咖啡，登记6次）。\n关键假设：没登记时数据不变（短期合理）。'
+  },
+  {
+    keys: ['两两平均加权','不等距','两两'],
+    reply: '**两两平均加权法**：\n1. 相邻两时点求平均\n2. 乘以各自的间隔长度\n3. 求和÷总间隔\n\n适用：间隔以月为单位且月数不等（如华科育新，3次登记间隔1月和2月）。\n\n不能默认"没登记数据不变"——这是实事求是的科学态度！'
+  },
+  {
+    keys: ['首尾折半','等距','折半'],
+    reply: '**首尾折半法**：$$\\bar{a} = \\frac{ \\frac{a_1}{2} + \\sum_{i=2}^{n-1} a_i + \\frac{a_n}{2} }{n-1}$$\n\n- $a_1$：第一个时点数值，取一半\n- $\\sum_{i=2}^{n-1} a_i$：第2到第n-1个时点全部相加\n- $a_n$：最后一个时点数值，取一半\n- 分母 $n-1$：时点个数减1（即间隔数）\n\n它是两两平均加权法的特例！当间隔全部相等时，公式可以简化。首尾各取一半，中间全取。\n\n适用：留学生创业园（海归），4次登记各间隔1月。'
+  },
+  {
+    keys: ['创客星','案例一','央企','中电光谷'],
+    reply: '🏢 创客星-武汉\n• 央企背景，隶属中电光谷集团，2015年成立\n• 22个城市36个站点，国家双创示范基地\n• 数据类型：连续时点（每日登记）→ 简单算术平均法\n• 第四季度均值：100家\n• 特点：每天都有在孵企业数量记录，数据最充足'
+  },
+  {
+    keys: ['光谷创业咖啡','案例二','民营','雷军','李儒雄'],
+    reply: '🏢 光谷创业咖啡（武汉）\n• 头部民营，雷军和李儒雄共同投资\n• 2013年武汉成立，后拓展成都、杭州\n• 数据类型：连续时点（隔日登记）→ 加权算术平均法\n• 登记6次，间隔20/25/11/19/16天\n• 第四季度均值：103家'
+  },
+  {
+    keys: ['华科育新','案例三','高校','华中科技'],
+    reply: '🏢 华科育新\n• 依托华中科技大学，校企改革成果，2017年成立\n• 三位一体科技服务，国家备案众创空间\n• 数据类型：间断时点（不等距）→ 两两平均加权法\n• 登记3次，间隔1月和2月\n• 第四季度均值：61家'
+  },
+  {
+    keys: ['留学生创业园','案例四','海归','老牌'],
+    reply: '🏢 武汉留学生创业园\n• 老牌国营，1998年政府设立\n• 吸纳海外优秀人才，打造创新创业生态\n• 数据类型：间断时点（等距）→ 首尾折半法\n• 登记4次，间隔均为1月\n• 第四季度均值：145家 🏆 最高！'
+  },
+  {
+    keys: ['哪个最高','谁最高','投资谁','答案','哪家','最多','结果'],
+    reply: '🏆 武汉留学生创业园以145家拔得头筹！\n\n排名：\n1. 留学生创业园 145家（首尾折半法）\n2. 光谷创业咖啡 103家（加权算术平均法）\n3. 创客星 100家（简单算术平均法）\n4. 华科育新 61家（两两平均加权法）\n\n央企、民企、高校、海归——多元主体共构创新矩阵！'
+  },
+  {
+    keys: ['思政','实事求是','科学态度','创新','发展','国家'],
+    reply: '💡 思政要点：\n\n• 统计学没有一成不变的公式，一切从实际出发、实事求是\n• 科创孵化平台是"大众创业、万众创新"的载体\n• 央企/民企/高校/海归多元主体共构创新矩阵（制度自信）\n• 财务人的职业道德：严谨求实、不做假账、敬畏数据\n• 差之毫厘谬以千里——你们的笔连着社会公平与国家资源分配'
+  },
+  {
+    keys: ['课后','作业','任务','考试','作业是什么'],
+    reply: '📝 课后任务：\n1. 基础习题：完成时点数列客观题（微助教）\n2. 创意作业：用时点数列做短视频\n3. 思政讨论：结合GDP谈"事物发展变化"\n4. 深度思考：只算均值够吗？不同方法可信度一样吗？\n5. 拓展：访问国家统计局 stats.gov.cn\n6. 下期：解锁「相对指标」时间数列！'
+  },
+];
+
+function findReply(query) {
+  const q = query.toLowerCase().replace(/\s+/g,'');
+  let best = null, bestScore = 0;
+  for (const faq of FAQ) {
+    let score = 0;
+    for (const key of faq.keys) {
+      if (q.includes(key.toLowerCase())) score += key.length;
+    }
+    if (score > bestScore) { bestScore = score; best = faq; }
+  }
+  if (bestScore > 0) return best.reply;
+  return null; // no FAQ match → fall back to generic
+}
+
+function getFallbackReply() {
+  return '这个问题我还在学习中呢～你可以试试问我：\n• "时点数列的分类有哪些？"\n• "创客星的数据怎么算？"\n• "四家公司哪个均值最高？"\n• "首尾折半法是什么？"\n\n或者点击上面的三个卡片来系统学习哦！';
+}
+
+// ==================== LLM API ====================
+const SYSTEM_PROMPT = `你是"小统"，《统计学原理》课程的AI助教，授课对象是财务管理专业大二学生。
+
+【你的知识库——仅限以下内容】
+
+一、时间数列基础
+时间数列是将某一指标在不同时间上的数值按时间先后顺序排列形成的数列。绝对数时间数列分为：
+1. 时期数列：反映现象在一段时期内发展过程的总量。特点：①各指标值可相加 ②数值大小与时间间隔长短直接相关 ③通常需要连续统计。如国内生产总值、产量。
+2. 时点数列：反映现象在某一时刻（瞬间）所达到的水平。特点：①各指标值通常不能纵向相加 ②数值大小与时间间隔长短没有直接关系 ③一般间隔一段时间登记一次。如年末总人口、库存量、外汇储备。相邻时点间的距离称为"间隔"。
+
+二、序时平均数（平均发展水平）
+序时平均数是将时间数列各期发展水平加以平均得到的平均数，从动态上说明现象在某一段时间内发展过程的一般水平。
+序时平均数(动态平均数) vs 静态平均数：①序时平均的是不同时间的数量差异，静态平均的是同一时间各单位差异；②序时从动态说明一般水平，静态从静态说明；③序时根据时间数列计算，静态根据变量数列计算。
+
+三、时点数列序时平均数的计算（四种方法）
+
+1. 连续时点·间隔相等（每日登记）→ 简单算术平均法
+   公式：ā = Σa / n
+   适用：每天都有数据记录。
+
+2. 连续时点·间隔不等（隔日登记）→ 加权算术平均法
+   公式：ā = Σ(a×f) / Σf （f为间隔长度）
+   适用：变时才登记，间隔<1个月。假设：没登记时数据不变。
+
+3. 间断时点·间隔相等 → 首尾折半法
+   公式：$$\\bar{a} = \\frac{ \\frac{a_1}{2} + \\sum_{i=2}^{n-1} a_i + \\frac{a_n}{2} }{n-1}$$
+   适用：间隔以月为单位且相等。前提假设：相邻时点间均匀变动（结果近似值）。
+
+4. 间断时点·间隔不等 → 两两平均加权法
+   ①相邻两时点求平均 ②×各自间隔长度 ③求和÷总间隔
+   适用：间隔以月为单位但不相等。
+
+四、四个案例（武汉科创孵化平台2025年第四季度在孵企业数量）
+- 创客星(央企)：连续时点每日登记→简单算术平均法→均值100家
+- 光谷创业咖啡(民营)：连续时点隔日登记→加权算术平均法→均值103家
+- 华科育新(高校)：间断时点不等距→两两平均加权法→均值61家
+- 留学生创业园(海归)：间断时点等距→首尾折半法→均值145家（最高）
+
+五、思政要点
+实事求是科学态度、科创孵化是双创载体、多元主体共构创新矩阵（制度自信）、财务人职业道德（严谨求实不做假账敬畏数据）。
+
+【行为准则——严格遵守】
+1. 只回答上述知识库覆盖的内容。如果学生提问与统计学/时点数列/四个案例完全无关，必须友好拒绝。
+2. **⚠️数学公式规则（极其重要）**：所有数学公式必须且只能使用 $$...$$ 包裹。正确示例：$$\\bar{a} = \\frac{\\sum a}{n}$$。错误示例（严禁）：\\bar{a} = \\frac{a}{b}（裸LaTeX会导致显示异常）。一行一个公式，不要拆散。绝对禁止使用单个$包裹公式！
+3. 回答控制在200字以内。使用emoji增加亲和力。可用markdown：**粗体**、- 列表。
+4. 多用比喻帮助理解（如"时点数列像拍照片，时期数列像录视频"）。
+5. 鼓励学生自己动手计算，不要直接给答案，引导思路。`;
+
+function getApiKey() {
+  return localStorage.getItem('xiaotong_apikey') || '';
+}
+
+function setApiKey(key) {
+  localStorage.setItem('xiaotong_apikey', key.trim());
+  updateModelLabel();
+}
+
+function updateModelLabel() {
+  const label = document.getElementById('chatModelLabel');
+  if (!label) return;
+  const hasKey = !!getApiKey();
+  label.textContent = hasKey ? '● DeepSeek AI' : '● 在线（FAQ模式）';
+  label.style.color = hasKey ? 'var(--accent)' : 'var(--success)';
+}
+
+async function callLLM(userMsg) {
+  const apiKey = getApiKey();
+  if (!apiKey) return null;
+  
+  CHAT_HISTORY.push({ role: 'user', content: userMsg });
+  // Keep last 10 messages
+  if (CHAT_HISTORY.length > 11) CHAT_HISTORY = CHAT_HISTORY.slice(-11);
+  
+  const messages = [
+    { role: 'system', content: SYSTEM_PROMPT },
+    ...CHAT_HISTORY
+  ];
+  
+  try {
+    const resp = await fetch('https://api.deepseek.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + apiKey
+      },
+      body: JSON.stringify({
+        model: 'deepseek-chat',
+        messages: messages,
+        max_tokens: 400,
+        temperature: 0.7
+      })
+    });
+    
+    if (!resp.ok) {
+      if (resp.status === 401) {
+        localStorage.removeItem('xiaotong_apikey');
+        updateModelLabel();
+        return '⚠️ API Key无效，已切换回FAQ模式。点击聊天标题旁的⚙重新设置。';
+      }
+      return null;
+    }
+    
+    const data = await resp.json();
+    let reply = data.choices[0].message.content;
+    CHAT_HISTORY.push({ role: 'assistant', content: reply });
+    return reply;
+  } catch(e) {
+    console.error('LLM error:', e);
+    return null; // fall back to FAQ
+  }
+}
+
+function showApiSettings() {
+  const currentKey = getApiKey();
+  const maskedKey = currentKey ? currentKey.slice(0, 8) + '...' + currentKey.slice(-4) : '';
+  
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:400;display:flex;align-items:center;justify-content:center;overflow-y:auto;';
+  overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+  
+  overlay.innerHTML = `
+    <div style="background:var(--surface);border-radius:20px;padding:24px;width:90%;max-width:360px;max-height:90vh;overflow-y:auto;" onclick="event.stopPropagation()">
+      <h3 style="font-size:17px;margin-bottom:4px;">⚙ 设置</h3>
+      
+      <p style="font-size:13px;color:var(--accent);margin:16px 0 8px;font-weight:600;">🧠 DeepSeek 大模型</p>
+      <label style="font-size:12px;color:var(--text2);">API Key</label>
+      <input id="apikeyInput" type="password" placeholder="sk-..." value="${currentKey}" 
+        style="width:100%;padding:10px;margin:6px 0 4px;border-radius:10px;background:var(--surface2);border:1px solid rgba(255,255,255,0.1);color:var(--text);font-size:13px;font-family:monospace;">
+      ${currentKey ? '<p style="font-size:11px;color:var(--text2);margin-bottom:4px;">当前: ' + maskedKey + '</p>' : ''}
+      
+      <div style="display:flex;gap:8px;margin-top:16px;">
+        <button onclick="document.getElementById('apikeyInput').value='';setApiKey('');this.parentElement.parentElement.parentElement.remove();" 
+          style="flex:1;padding:10px;border-radius:10px;background:rgba(255,255,255,0.06);border:none;color:var(--text2);font-size:13px;cursor:pointer;">
+          ${currentKey ? '清除Key' : '取消'}
+        </button>
+        <button onclick="
+          var dk=document.getElementById('apikeyInput').value.trim();
+          if(dk)setApiKey(dk);
+          CHAT_HISTORY=[];
+          document.querySelector('#chatContainer').innerHTML='';
+          toggleChat();
+          this.parentElement.parentElement.parentElement.remove();
+        " style="flex:2;padding:10px;border-radius:10px;background:linear-gradient(135deg,var(--primary),var(--accent));border:none;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">
+          保存
+        </button>
+      </div>
+      
+      <p style="font-size:10px;color:var(--text2);margin-top:12px;text-align:center;">
+        Key仅保存在浏览器本地<br>
+        获取Key: platform.deepseek.com
+      </p>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  setTimeout(() => document.getElementById('apikeyInput')?.focus(), 200);
+}
+
+function sendMessage() {
+  const input = document.getElementById('chatInput');
+  if (!input) return;
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  
+  // 预激活语音引擎：在用户点击时同步触发，手机浏览器后续才能自动播放
+  if (isVoiceOn() && 'speechSynthesis' in window) {
+    speechSynthesis.speak(new SpeechSynthesisUtterance(''));
+  }
+  
+  const msgs = document.getElementById('chatMessages');
+  if (!msgs) return;
+  
+  // Add user message (safe: HTML-escaped via escapeHtml)
+  msgs.insertAdjacentHTML('beforeend', `<div class="chat-msg user">${escapeHtml(text)}</div>`);
+  
+  // Add typing indicator
+  const typingId = 'typing-' + Date.now();
+  msgs.insertAdjacentHTML('beforeend', `<div class="chat-typing" id="${typingId}"><span></span><span></span><span></span></div>`);
+  msgs.scrollTop = msgs.scrollHeight;
+  
+  // Try LLM first, fall back to FAQ
+  (async () => {
+    let reply = null;
+    
+    if (getApiKey()) {
+      reply = await callLLM(text);
+    }
+    
+    if (!reply) {
+      // FAQ fallback
+      reply = findReply(text) || getFallbackReply();
+    }
+    
+    const typing = document.getElementById(typingId);
+    if (typing) typing.remove();
+    
+    // Add bot message with speak button
+    const msgId = 'msg-' + Date.now();
+    window._replyCache = window._replyCache || {};
+    window._replyCache[msgId] = reply;
+    msgs.innerHTML += `<div class="chat-msg bot" id="${msgId}">${renderMarkdown(reply)}<span class="msg-speak-btn" onclick="event.stopPropagation();var r=window._replyCache['${msgId}'];if(r)speakCute(r,false)" title="点击播放语音">🔊</span></div>`;
+    msgs.scrollTop = msgs.scrollHeight;
+    
+    // Auto-TTS (primed during user click above)
+    if (isVoiceOn() && reply.length < 250) {
+      speakCute(reply, false);
+    }
+  })();
+}
+
+function toggleChat() {
+  if (chatOpen) { closeChat(); return; }
+  chatOpen = true;
+  const container = document.getElementById('chatContainer');
+  container.innerHTML = `
+    <div class="chat-panel" onclick="event.stopPropagation()">
+      <div class="chat-header">
+        <div class="chat-avatar"><img src="xiaotong.png" style="width:32px;height:32px;border-radius:50%;object-fit:cover;" alt="小统"></div>
+        <div class="chat-header-info">
+          <h4>小统</h4>
+          <span id="chatModelLabel">● 在线</span>
+        </div>
+        <button class="chat-close" onclick="showApiSettings()" style="margin-right:4px;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.06);border:none;color:var(--text2);font-size:14px;cursor:pointer;" title="大模型设置">⚙</button>
+        <button class="chat-close" onclick="closeChat()">✕</button>
+      </div>
+      <div class="chat-messages" id="chatMessages">
+        <div class="chat-msg bot">你好呀！我是AI助教小统🪣<br>有什么关于时点数列的问题尽管问我～</div>
+      </div>
+      <div class="chat-input-area">
+        <input id="chatInput" type="text" placeholder="输入你的问题..." onkeydown="if(event.key==='Enter')sendMessage()">
+        <button class="chat-send" onclick="sendMessage()">➤</button>
+      </div>
+    </div>
+  `;
+  setTimeout(() => document.getElementById('chatInput')?.focus(), 400);
+  setTimeout(updateModelLabel, 100);
+}
+
+function closeChat() {
+  chatOpen = false;
+  CHAT_HISTORY = [];
+  document.getElementById('chatContainer').innerHTML = '';
+}
+
+
+// ==================== INLINE MARKDOWN RENDERER ====================
+function renderMarkdown(text) {
+  //   // Simple fallback: if text has LaTeX commands but no $$ wrapping,
+  // wrap any line containing \ followed by LaTeX command in $$
+  const bs = String.fromCharCode(92); // literal backslash
+  const latexCmds = ['frac','sum','bar','cdot','int','sqrt','alpha','beta','gamma','delta','infty','partial','times','div','pm','mp','rightarrow','leftarrow','uparrow','downarrow','langle','rangle','ldots','cdots','vdots','ddots','forall','exists','in','notin','subseteq','supseteq'];
+  let hasBareLatex = false;
+  for (const c of latexCmds) {
+    if (text.indexOf(bs + c) >= 0) { hasBareLatex = true; break; }
+  }
+  if (hasBareLatex && text.indexOf('$$') < 0) {
+    // No $$ found but LaTeX commands present -> wrap everything
+    text = '$$' + text + '$$';
+  }
+  
+  // Protect math first
+  const mathBlocks = [];
+  let t = text;
+  t = t.replace(/\$\$([\s\S]*?)\$\$/g, (m, f) => {
+    mathBlocks.push({type:'block', content: f.trim()});
+    return '\u0000MB' + (mathBlocks.length-1) + '\u0000';
+  });
+  t = t.replace(/\$([^\$]+?)\$/g, (m, f) => {
+    mathBlocks.push({type:'inline', content: f.trim()});
+    return '\u0000MI' + (mathBlocks.length-1) + '\u0000';
+  });
+  
+  // Escape HTML
+  t = t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  
+  t = t.replace(/\u0000MB(\d+)\u0000/g, (m,i) => renderMath(mathBlocks[+i].content, true));
+  t = t.replace(/\u0000MI(\d+)\u0000/g, (m,i) => renderMath(mathBlocks[+i].content, false));
+
+  // Bold **text**
+  t = t.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  // Italic *text* (but not **)
+  t = t.replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '<em>$1</em>');
+  // Inline code `text`
+  t = t.replace(/`(.+?)`/g, '<code>$1</code>');
+  // Headers
+  t = t.replace(/^### (.+)$/gm, '<h4>$1</h4>');
+  t = t.replace(/^## (.+)$/gm, '<h3>$1</h3>');
+  // Lists (before newline handling)
+  t = t.replace(/^[*-] (.+)$/gm, '<li>$1</li>');
+  t = t.replace(/((?:<li>.*<\/li>\n?)+)/g, '<ul>$1</ul>');
+  // Remove <br> inside lists
+  t = t.replace(/<ul>([\s\S]*?)<\/ul>/g, (m, inner) => '<ul>' + inner.replace(/<br>/g, '') + '</ul>');
+  // Ordered lists
+  t = t.replace(/^\d+\. (.+)$/gm, '<li>$1</li>');
+  // Blockquote
+  t = t.replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>');
+  // Double newline = paragraph
+  t = t.replace(/\n\n/g, '</p><p>');
+  // Single newline = <br>
+  t = t.replace(/\n/g, '<br>');
+  // Wrap in paragraph
+  if (!t.startsWith('<')) t = '<p>' + t + '</p>';
+  // Clean empty paragraphs
+  t = t.replace(/<p><\/p>/g, '');
+  // Fix nested <p> in lists
+  t = t.replace(/<p>(<[ou]l>)/g, '$1');
+  t = t.replace(/(<\/[ou]l>)<\/p>/g, '$1');
+  
+  return t;
+}
+
+function renderMath(formula, displayMode) {
+  if (typeof katex === 'undefined') {
+    const f = formula.replace(/\\\\/g,'\\');
+    return displayMode ? '<p style="color:#a29bfe;font-style:italic;text-align:center;padding:8px 0;">' + f + '</p>' : '<span style="color:#a29bfe;font-style:italic;">' + f + '</span>';
+  }
+  try {
+    return katex.renderToString(formula, {displayMode, throwOnError: false, trust: true});
+  } catch(e) {
+    return displayMode ? '<p><code>' + formula + '</code></p>' : '<code>' + formula + '</code>';
+  }
+}
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+// Init voice button on page load
+updateVoiceButton();
+</script>
+</body>
+</html>
